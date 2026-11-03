@@ -1,4 +1,4 @@
-import { Box, Button, Indicator, Placeholder, Popover, Readout, Row, Section, copy } from "glimpse-sdk";
+import { Box, Button, Indicator, Placeholder, Popover, Readout, Row, Section, copy, usePersistentState } from "glimpse-sdk";
 import { useEffect, useOptions, usePlacement, useState } from "glimpse-sdk";
 
 const ICON = "alarm-symbolic";
@@ -98,7 +98,7 @@ export function StopwatchApp() {
     const vertical = placement?.orientation === "vertical";
     const title = configuredName(options, NAME);
 
-    const [watch, setWatch] = useState<Stopwatch>(initialStopwatch);
+    const [watch, setWatch] = usePersistentState<Stopwatch>("stopwatch", initialStopwatch());
 
     const running = watch.state === "running";
     useTicker(running);
