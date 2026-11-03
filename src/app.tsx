@@ -1,55 +1,21 @@
-import { Box, Button, Indicator, Placeholder, Popover, Readout, Row, Section, copy, usePersistentState } from "glimpse-sdk";
+import {
+    ActionRow,
+    Box,
+    Button,
+    EntryRow,
+    ExpanderRow,
+    Indicator,
+    Placeholder,
+    Popover,
+    Readout,
+    Section,
+    usePersistentState,
+} from "glimpse-sdk";
 import { useEffect, useOptions, usePlacement, useState } from "glimpse-sdk";
+import * as model from "./state";
 
 const ICON = "alarm-symbolic";
 const NAME = "Stopwatch";
-
-export type StopwatchState = "idle" | "running" | "paused";
-
-export type Lap = {
-    /** Number of the lap, starting at 1. */
-    id: number;
-    /** Time of this lap alone, in milliseconds. */
-    split: number;
-    /** Total time since the first start, in milliseconds. */
-    total: number;
-};
-
-export type Stopwatch = {
-    state: StopwatchState;
-    /** Elapsed time in milliseconds at the moment the clock last stopped. */
-    base: number;
-    /** Timestamp of the moment the clock last started, or 0 while not running. */
-    started: number;
-    laps: Lap[];
-};
-
-export function initialStopwatch(): Stopwatch {
-    return { state: "idle", base: 0, started: 0, laps: [] };
-}
-
-/** Elapsed time in milliseconds; `now` only matters while running. */
-export function elapsed(sw: Stopwatch, now: number): number {
-    return sw.state === "running" ? sw.base + (now - sw.started) : sw.base;
-}
-
-export function startOrPause(sw: Stopwatch, now: number): Stopwatch {
-    if (sw.state === "running") {
-        return { ...sw, state: "paused", base: sw.base + (now - sw.started), started: 0 };
-    }
-    return { ...sw, state: "running", started: now };
-}
-
-export function resetStopwatch(): Stopwatch {
-    return initialStopwatch();
-}
-
-export function addLap(sw: Stopwatch, now: number): Stopwatch {
-    if (sw.state !== "running") return sw;
-    const total = elapsed(sw, now);
-    const split = total - (sw.laps[sw.laps.length - 1]?.total ?? 0);
-    return { ...sw, laps: [...sw.laps, { id: sw.laps.length + 1, split, total }] };
-}
 
 /** Format milliseconds as `h:mm:ss.x` once an hour is involved and `m:ss.x` otherwise. */
 export function formatTime(ms: number, showFraction = true): string {
@@ -67,7 +33,10 @@ export function formatTime(ms: number, showFraction = true): string {
 }
 
 /** The `Readout` split: value without the trailing fraction, unit carrying the fraction digit. */
-export function splitTime(ms: number): { value: string; unit: string | undefined } {
+export function splitTime(ms: number): {
+    value: string;
+    unit: string | undefined;
+} {
     const text = formatTime(ms);
     const dot = text.lastIndexOf(".");
     if (dot === -1) return { value: text, unit: undefined };
@@ -75,7 +44,10 @@ export function splitTime(ms: number): { value: string; unit: string | undefined
 }
 
 /** Options are untrusted input: only accept a string short enough to show. */
-export function configuredName(options: Record<string, unknown>, fallback: string): string {
+export function configuredName(
+    options: Record<string, unknown>,
+    fallback: string,
+): string {
     const value = options.name;
     if (typeof value !== "string") return fallback;
     const trimmed = value.trim();
@@ -98,76 +70,152 @@ export function StopwatchApp() {
     const vertical = placement?.orientation === "vertical";
     const title = configuredName(options, NAME);
 
-    const [watch, setWatch] = usePersistentState<Stopwatch>("stopwatch", initialStopwatch());
+    const [watch, setWatch] = usePersistentState<model.Stopwatch>(
+        "stopwatch",
+        model.initial(),
+    );
 
     const running = watch.state === "running";
     useTicker(running);
 
-    const current = elapsed(watch, Date.now());
+    const current = model.getElapsed(watch, Date.now());
     const readout = splitTime(current);
-    const paused = watch.state === "paused" && watch.base > 0;
+    const paused = watch.state === "paused" && watch.totalElapsed > 0;
+    const canAddRecord =
+        watch.state === "running" ||
+        (watch.state === "paused" && watch.totalElapsed > 0);
 
     return (
         <>
             <Indicator
                 icon={ICON}
-                tooltip={running ? `${title}: ${formatTime(current, false)}` : title}
+                tooltip={
+                    running ? `${title}: ${formatTime(current, false)}` : title
+                }
                 dot={running ? "#3584e4" : undefined}
             >
-                {vertical || watch.state === "idle" ? null : formatTime(current, false)}
+                {vertical || watch.state === "idle"
+                    ? null
+                    : formatTime(current, false)}
             </Indicator>
             <Popover
                 icon={ICON}
                 title={title}
-                subtitle={running ? "Running" : watch.state === "paused" ? "Paused" : "Ready"}
+                subtitle={
+                    running
+                        ? "Running"
+                        : watch.state === "paused"
+                          ? "Paused"
+                          : "Ready"
+                }
             >
                 <Section>
-                    <Readout value={readout.value} unit={readout.unit} className="numeric" />
-                    <Box spacing={6} halign="center" valign="center">
-                        <Button
-                            icon={running ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"}
-                            text={running ? "Pause" : paused ? "Resume" : "Start"}
-                            tooltip={running ? "Pause the stopwatch" : "Start the stopwatch"}
-                            onClick={() => setWatch((w) => startOrPause(w, Date.now()))}
+                    <Box valign="fill" spacing={6}>
+                        <Readout
+                            value={readout.value}
+                            unit={readout.unit}
+                            className="numeric"
                         />
-                        <Button
-                            icon="emoji-flags-symbolic"
-                            text="Lap"
-                            tooltip="Record a lap"
-                            sensitive={running}
-                            onClick={() => setWatch((w) => addLap(w, Date.now()))}
-                        />
-                        <Button
-                            icon="view-refresh-symbolic"
-                            text="Reset"
-                            tooltip={paused ? "Reset the stopwatch" : "Pause or stop before resetting"}
-                            sensitive={paused}
-                            onClick={() => setWatch(resetStopwatch)}
-                        />
-                        <Button
-                            icon="edit-copy-symbolic"
-                            text="Copy laps"
-                            tooltip="Copy every lap split"
-                            sensitive={watch.laps.length > 0}
-                            onClick={() => copy(watch.laps.map((lap) => formatTime(lap.split)).join("\n"))}
-                        />
+                        <Box spacing={6} halign="end" valign="center" hexpand>
+                            <Button
+                                icon={
+                                    running
+                                        ? "media-playback-pause-symbolic"
+                                        : "media-playback-start-symbolic"
+                                }
+                                text={
+                                    running
+                                        ? "Pause"
+                                        : paused
+                                          ? "Resume"
+                                          : "Start"
+                                }
+                                tooltip={
+                                    running
+                                        ? "Pause the stopwatch"
+                                        : "Start the stopwatch"
+                                }
+                                onClick={() =>
+                                    setWatch((w) =>
+                                        model.toggleRunning(w, Date.now()),
+                                    )
+                                }
+                            />
+                            <Button
+                                icon="view-refresh-symbolic"
+                                text="Reset"
+                                tooltip={
+                                    paused
+                                        ? "Reset the stopwatch"
+                                        : "Pause or stop before resetting"
+                                }
+                                sensitive={paused}
+                                onClick={() => setWatch(model.reset)}
+                            />
+
+                            <Button
+                                icon="plus-symbolic"
+                                tooltip="Add record"
+                                sensitive={canAddRecord}
+                                onClick={() =>
+                                    setWatch((w) =>
+                                        model.addRecord(w, Date.now()),
+                                    )
+                                }
+                            />
+                        </Box>
                     </Box>
+                    <EntryRow
+                        placeholder="What are you working on?"
+                        value={watch.description ?? ""}
+                        onChange={(value) =>
+                            setWatch((w) => model.setDescription(w, value))
+                        }
+                        onSubmit={() => {
+                            if (canAddRecord) {
+                                setWatch((w) => model.addRecord(w, Date.now()));
+                            }
+                        }}
+                    ></EntryRow>
                 </Section>
-                <Section title="Laps" count={String(watch.laps.length)}>
-                    {watch.laps.length === 0 ? (
-                        <Placeholder icon={ICON} title="No laps" description="Recorded laps show up here" />
+                <Section title="Records" count={String(watch.records.length)}>
+                    {watch.records.length === 0 ? (
+                        <Placeholder
+                            icon={ICON}
+                            title="Records"
+                            description="Time records show up here"
+                        />
                     ) : (
-                        [...watch.laps]
-                            .reverse()
-                            .map((lap) => (
-                                <Row
-                                    key={lap.id}
-                                    title={`Lap ${lap.id}`}
-                                    subtitle={formatTime(lap.split)}
-                                    value={formatTime(lap.total)}
-                                    typography="numeric"
+                        [...watch.records].reverse().map((record) => (
+                            <ExpanderRow
+                                key={record.id}
+                                title={record.description}
+                                subtitle={formatTime(record.totalElapsed)}
+                                value={formatTime(record.totalElapsed)}
+                                typography="numeric"
+                            >
+                                <ActionRow
+                                    icon="document-edit-symbolic"
+                                    title="Rename"
+                                    tooltip="Rename record"
+                                    onActivate={() =>
+                                        setWatch((w) =>
+                                            model.removeRecord(w, record.id),
+                                        )
+                                    }
                                 />
-                            ))
+                                <ActionRow
+                                    icon="user-trash-symbolic"
+                                    title="Remove"
+                                    tooltip="Remove record"
+                                    onActivate={() =>
+                                        setWatch((w) =>
+                                            model.removeRecord(w, record.id),
+                                        )
+                                    }
+                                />
+                            </ExpanderRow>
+                        ))
                     )}
                 </Section>
             </Popover>
