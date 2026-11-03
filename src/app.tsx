@@ -141,12 +141,6 @@ export function Applet() {
                                 typography="numeric"
                             >
                                 <ActionRow
-                                    icon="document-edit-symbolic"
-                                    title="Rename"
-                                    tooltip="Rename record"
-                                    onActivate={() => setState((s) => model.removeRecord(s, record.id))}
-                                />
-                                <ActionRow
                                     icon="user-trash-symbolic"
                                     title="Remove"
                                     tooltip="Remove record"
