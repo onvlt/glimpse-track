@@ -1,0 +1,40 @@
+[doc("list recipes")]
+default:
+    @just --list --unsorted
+
+[doc("install the npm dependencies when package.json changes")]
+deps:
+    @[ node_modules/.package-lock.json -nt package.json ] || { npm install && touch node_modules/.package-lock.json; }
+
+[doc("build production files into dist/")]
+build: deps
+    node --run build
+    cp lt.nyv.glimpse-stopwatch.desktop dist/
+
+[doc("run the applet in the panel, restarting on source edits")]
+dev zone="left":
+    glimpsectl applet run --dev --zone {{ zone }} .
+
+[doc("build the package and install it")]
+install:
+    glimpsectl applet package --install .
+
+[doc("build the applet package")]
+package:
+    glimpsectl applet package .
+
+[doc("run the tests")]
+test: deps
+    #!/usr/bin/env bash
+    set -eu
+    shopt -s nullglob
+    files=(*.test.tsx)
+    if [ -z "${files[0]:-}" ]; then echo "no tests"; exit 0; fi
+    rm -rf build/tests
+    ./node_modules/.bin/esbuild "${files[@]}" --bundle --platform=node --format=esm --outdir=build/tests --out-extension:.js=.mjs --log-level=warning
+    node --test "build/tests/*.mjs"
+
+[doc("lint")]
+lint: deps
+    ./node_modules/.bin/biome check .
+    ./node_modules/.bin/tsc --noEmit

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=glimpse-stopwatch
+Comment=Stopwatch applet for Glimpse desktop panel
+Icon=alarm-symbolic
+Exec=node applet.mjs
+NoDisplay=true
+Implements=me.aresa.Glimpse.Applet1

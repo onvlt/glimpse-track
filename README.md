@@ -1,0 +1,13 @@
+# glimpse-stopwatch
+
+Applet id: `lt.nyv.glimpse-stopwatch`.
+
+Run `npm install`, then `just dev`: it loads `devconfig.toml` and attaches the
+applet with its options and env. Options edits update it; source
+edits rebuild and restart it. `just build` bundles `index.tsx` into `dist/applet.mjs`; the desktop
+entry runs that bundle. `npm run check` type-checks.
+
+The justfile wraps the whole loop: `just dev`, `just test`, `just lint`, `just package`,
+`just install`.
+
+Add `center = ["lt.nyv.glimpse-stopwatch"]` to a panel's applet zone.
