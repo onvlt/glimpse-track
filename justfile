@@ -1,3 +1,5 @@
+APP_ID := "lt.nyv.glimpse-stopwatch"
+
 [doc("list recipes")]
 default:
     @just --list --unsorted
@@ -38,3 +40,6 @@ test: deps
 lint: deps
     ./node_modules/.bin/biome check .
     ./node_modules/.bin/tsc --noEmit
+
+clear-state:
+    rm -rf ~/.local/state/glimpse/applets/{{ APP_ID }}
