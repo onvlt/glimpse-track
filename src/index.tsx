@@ -1,4 +1,4 @@
 import { run } from "glimpse-sdk";
-import { StopwatchApp } from "./app.tsx";
+import { Applet } from "./app.tsx";
 
-await run(<StopwatchApp />);
+await run(<Applet />);

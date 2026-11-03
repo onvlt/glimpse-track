@@ -1,4 +1,4 @@
-APP_ID := "lt.nyv.glimpse-stopwatch"
+APP_ID := "lt.nyv.glimpse-track"
 
 [doc("list recipes")]
 default:
@@ -11,7 +11,7 @@ deps:
 [doc("build production files into dist/")]
 build: deps
     node --run build
-    cp lt.nyv.glimpse-stopwatch.desktop dist/
+    cp lt.nyv.glimpse-track.desktop dist/
 
 [doc("run the applet in the panel, restarting on source edits")]
 dev zone="left":

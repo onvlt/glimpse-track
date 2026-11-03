@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Version=1.5
-Name=glimpse-stopwatch
-Comment=Stopwatch applet for Glimpse desktop panel
+Name=glimpse-track
+Comment=Track applet for Glimpse desktop panel
 Icon=alarm-symbolic
 Exec=node applet.mjs
 NoDisplay=true

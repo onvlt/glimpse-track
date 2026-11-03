@@ -1,4 +1,4 @@
-export type StopwatchState = "idle" | "running" | "paused";
+export type TimeTrackerStatus = "idle" | "running" | "paused";
 
 export interface Record {
     id: number;
@@ -6,8 +6,8 @@ export interface Record {
     totalElapsed: number;
 }
 
-export interface Stopwatch {
-    state: StopwatchState;
+export interface TimeTracker {
+    status: TimeTrackerStatus;
     /**
      * Elapsed time in milliseconds at the moment the clock last stopped.
      */
@@ -23,9 +23,9 @@ export interface Stopwatch {
     records: Array<Record>;
 }
 
-export function initial(): Stopwatch {
+export function initial(): TimeTracker {
     return {
-        state: "idle",
+        status: "idle",
         totalElapsed: 0,
         startedAt: 0,
         description: "",
@@ -36,25 +36,23 @@ export function initial(): Stopwatch {
 /**
  * Elapsed time in milliseconds; `now` only matters while running.
  */
-export function getElapsed(model: Stopwatch, now: number): number {
-    return model.state === "running"
-        ? model.totalElapsed + (now - model.startedAt)
-        : model.totalElapsed;
+export function getElapsed(model: TimeTracker, now: number): number {
+    return model.status === "running" ? model.totalElapsed + (now - model.startedAt) : model.totalElapsed;
 }
 
-export function toggleRunning(model: Stopwatch, now: number): Stopwatch {
-    if (model.state === "running") {
+export function toggleRunning(model: TimeTracker, now: number): TimeTracker {
+    if (model.status === "running") {
         return {
             ...model,
-            state: "paused",
+            status: "paused",
             totalElapsed: model.totalElapsed + (now - model.startedAt),
             startedAt: 0,
         };
     }
-    return { ...model, state: "running", startedAt: now };
+    return { ...model, status: "running", startedAt: now };
 }
 
-export function reset(model: Stopwatch): Stopwatch {
+export function reset(model: TimeTracker): TimeTracker {
     return {
         ...initial(),
         records: model.records,
@@ -64,14 +62,11 @@ export function reset(model: Stopwatch): Stopwatch {
 /**
  * Description is untrusted input: trimmed and capped at the same length as option names.
  */
-export function setDescription(
-    model: Stopwatch,
-    description: string,
-): Stopwatch {
+export function setDescription(model: TimeTracker, description: string): TimeTracker {
     return { ...model, description };
 }
 
-export function addRecord(model: Stopwatch, now: number): Stopwatch {
+export function addRecord(model: TimeTracker, now: number): TimeTracker {
     const id = model.records.length + 1;
     const description = model.description.trim();
     return {
@@ -80,21 +75,14 @@ export function addRecord(model: Stopwatch, now: number): Stopwatch {
             ...model.records,
             {
                 id,
-                description:
-                    description === ""
-                        ? `Record ${id}`
-                        : description.slice(0, 64),
+                description: description === "" ? `Record ${id}` : description.slice(0, 64),
                 totalElapsed: getElapsed(model, now),
             },
         ],
     };
 }
 
-export function renameRecord(
-    model: Stopwatch,
-    id: number,
-    description: string,
-): Stopwatch {
+export function renameRecord(model: TimeTracker, id: number, description: string): TimeTracker {
     const name = description.trim().slice(0, 64);
     return {
         ...model,
@@ -109,7 +97,7 @@ export function renameRecord(
     };
 }
 
-export function removeRecord(model: Stopwatch, id: number): Stopwatch {
+export function removeRecord(model: TimeTracker, id: number): TimeTracker {
     const kept = model.records.filter((record) => record.id !== id);
     return {
         ...model,

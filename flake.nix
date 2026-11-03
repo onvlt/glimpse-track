@@ -1,5 +1,5 @@
 {
-  description = "Development shell and package for the glimpse Stopwatch exec applet";
+  description = "Development shell and package for the glimpse Track exec applet";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
@@ -21,8 +21,8 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         rec {
-          glimpse-stopwatch = pkgs.callPackage ./nix/package.nix { };
-          default = glimpse-stopwatch;
+          glimpse-track = pkgs.callPackage ./nix/package.nix { };
+          default = glimpse-track;
         }
       );
 

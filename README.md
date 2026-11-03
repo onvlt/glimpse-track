@@ -1,11 +1,6 @@
-# glimpse-stopwatch
+# glimpse-track
 
-A stopwatch applet for the [Glimpse](https://alex-oleshkevich.github.io/glimpse) desktop panel.
-It shows the elapsed time on the bar and a popover to control the stopwatch and keep records.
-
-- Start, pause, resume and reset; the time is live on the indicator while running
-- Records with a description — type one in the entry row and submit to add a record
-- Stopwatch state is persistendc accross restarts
+Simple time tracker applet for the [Glimpse](https://alex-oleshkevich.github.io/glimpse) desktop panel. It allows tracking time spent on various tasks and keeps record of spent times. It displays live elapsed time on current task in the panel.
 
 ## Installation
 
@@ -14,7 +9,7 @@ It shows the elapsed time on the bar and a popover to control the stopwatch and 
 This applet comes with `flake.nix`. You can either install it into nix profile or add it to your flake inputs.
 
 ```sh
-nix profile add github:onvlt/glimpse-stopwatch
+nix profile add github:onvlt/glimpse-track
 ```
 
 ### Build from source
@@ -30,7 +25,7 @@ Add the applet id to a zone of a panel in `~/.config/glimpse/panel.toml`:
 
 ```toml
 [[panels]]
-left = ["lt.nyv.glimpse-stopwatch"]
+left = ["lt.nyv.glimpse-track"]
 ```
 
 Applet should automatically start after saving the config file.

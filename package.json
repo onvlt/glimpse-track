@@ -1,5 +1,5 @@
 {
-    "name": "lt.nyv.glimpse-stopwatch",
+    "name": "lt.nyv.glimpse-track",
     "private": true,
     "type": "module",
     "dependencies": {

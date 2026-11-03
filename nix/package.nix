@@ -4,15 +4,15 @@
   nodejs_26,
 }:
 let
-  appletId = "lt.nyv.glimpse-stopwatch";
+  appletId = "lt.nyv.glimpse-track";
 in
 buildNpmPackage {
   src = ../.;
 
-  pname = "glimpse-stopwatch";
+  pname = "glimpse-track";
   version = "0.1.0";
 
-  npmDepsHash = "sha256-iz7csoJbqQ6YSBe958o6gGA0wIyA+2QXNuKDGziAOFc=";
+  npmDepsHash = "sha256-KBqEOq9WA/C+Ze1ZzqCciNcc52SoA6NNlwzAIUWSVRU=";
 
   nativeBuildInputs = [ makeWrapper ];
 
@@ -36,7 +36,7 @@ buildNpmPackage {
   passthru.appletId = appletId;
 
   meta = {
-    description = "Stopwatch applet for the Glimpse desktop panel";
+    description = "Track applet for the Glimpse desktop panel";
     mainProgram = appletId;
     platforms = [
       "x86_64-linux"

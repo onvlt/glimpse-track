@@ -15,10 +15,10 @@ import { useEffect, useOptions, usePlacement, useState } from "glimpse-sdk";
 import * as model from "./state";
 
 const ICON = "alarm-symbolic";
-const NAME = "Stopwatch";
+const NAME = "Time tracker";
 
 /** Format milliseconds as `h:mm:ss.x` once an hour is involved and `m:ss.x` otherwise. */
-export function formatTime(ms: number, showFraction = true): string {
+export function formatTime(ms: number, { showFraction = true }: { showFraction?: boolean } = {}): string {
     const bounded = Math.max(0, ms);
     const whole = Math.floor(bounded / 1000);
     const fraction = Math.floor((bounded % 1000) / 100);
@@ -44,10 +44,7 @@ export function splitTime(ms: number): {
 }
 
 /** Options are untrusted input: only accept a string short enough to show. */
-export function configuredName(
-    options: Record<string, unknown>,
-    fallback: string,
-): string {
+export function configuredName(options: Record<string, unknown>, fallback: string): string {
     const value = options.name;
     if (typeof value !== "string") return fallback;
     const trimmed = value.trim();
@@ -64,129 +61,78 @@ function useTicker(running: boolean): void {
     }, [running]);
 }
 
-export function StopwatchApp() {
+export function Applet() {
     const options = useOptions();
     const placement = usePlacement();
     const vertical = placement?.orientation === "vertical";
     const title = configuredName(options, NAME);
 
-    const [watch, setWatch] = usePersistentState<model.Stopwatch>(
-        "stopwatch",
-        model.initial(),
-    );
+    const [state, setState] = usePersistentState<model.TimeTracker>("timeTracker", model.initial());
 
-    const running = watch.state === "running";
+    const running = state.status === "running";
     useTicker(running);
 
-    const current = model.getElapsed(watch, Date.now());
+    const current = model.getElapsed(state, Date.now());
     const readout = splitTime(current);
-    const paused = watch.state === "paused" && watch.totalElapsed > 0;
-    const canAddRecord =
-        watch.state === "running" ||
-        (watch.state === "paused" && watch.totalElapsed > 0);
+    const paused = state.status === "paused" && state.totalElapsed > 0;
+    const canAddRecord = state.status === "running" || (state.status === "paused" && state.totalElapsed > 0);
 
     return (
         <>
             <Indicator
                 icon={ICON}
-                tooltip={
-                    running ? `${title}: ${formatTime(current, false)}` : title
-                }
+                tooltip={running ? `${title}: ${formatTime(current, { showFraction: false })}` : title}
                 dot={running ? "#3584e4" : undefined}
             >
-                {vertical || watch.state === "idle"
-                    ? null
-                    : formatTime(current, false)}
+                {vertical || state.status === "idle" ? null : formatTime(current, { showFraction: false })}
             </Indicator>
             <Popover
                 icon={ICON}
                 title={title}
-                subtitle={
-                    running
-                        ? "Running"
-                        : watch.state === "paused"
-                          ? "Paused"
-                          : "Ready"
-                }
+                subtitle={running ? "Running" : state.status === "paused" ? "Paused" : "Ready"}
             >
                 <Section>
                     <Box valign="fill" spacing={6}>
-                        <Readout
-                            value={readout.value}
-                            unit={readout.unit}
-                            className="numeric"
-                        />
+                        <Readout value={readout.value} unit={readout.unit} className="numeric" />
                         <Box spacing={6} halign="end" valign="center" hexpand>
                             <Button
-                                icon={
-                                    running
-                                        ? "media-playback-pause-symbolic"
-                                        : "media-playback-start-symbolic"
-                                }
-                                text={
-                                    running
-                                        ? "Pause"
-                                        : paused
-                                          ? "Resume"
-                                          : "Start"
-                                }
-                                tooltip={
-                                    running
-                                        ? "Pause the stopwatch"
-                                        : "Start the stopwatch"
-                                }
-                                onClick={() =>
-                                    setWatch((w) =>
-                                        model.toggleRunning(w, Date.now()),
-                                    )
-                                }
+                                icon={running ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"}
+                                text={running ? "Pause" : paused ? "Resume" : "Start"}
+                                tooltip={running ? "Pause the stopwatch" : "Start the stopwatch"}
+                                onClick={() => setState((s) => model.toggleRunning(s, Date.now()))}
                             />
                             <Button
                                 icon="view-refresh-symbolic"
                                 text="Reset"
-                                tooltip={
-                                    paused
-                                        ? "Reset the stopwatch"
-                                        : "Pause or stop before resetting"
-                                }
+                                tooltip={paused ? "Reset the stopwatch" : "Pause or stop before resetting"}
                                 sensitive={paused}
-                                onClick={() => setWatch(model.reset)}
+                                onClick={() => setState(model.reset)}
                             />
 
                             <Button
                                 icon="plus-symbolic"
                                 tooltip="Add record"
                                 sensitive={canAddRecord}
-                                onClick={() =>
-                                    setWatch((w) =>
-                                        model.addRecord(w, Date.now()),
-                                    )
-                                }
+                                onClick={() => setState((s) => model.addRecord(s, Date.now()))}
                             />
                         </Box>
                     </Box>
                     <EntryRow
                         placeholder="What are you working on?"
-                        value={watch.description ?? ""}
-                        onChange={(value) =>
-                            setWatch((w) => model.setDescription(w, value))
-                        }
+                        value={state.description ?? ""}
+                        onChange={(value) => setState((s) => model.setDescription(s, value))}
                         onSubmit={() => {
                             if (canAddRecord) {
-                                setWatch((w) => model.addRecord(w, Date.now()));
+                                setState((w) => model.addRecord(w, Date.now()));
                             }
                         }}
                     ></EntryRow>
                 </Section>
-                <Section title="Records" count={String(watch.records.length)}>
-                    {watch.records.length === 0 ? (
-                        <Placeholder
-                            icon={ICON}
-                            title="Records"
-                            description="Time records show up here"
-                        />
+                <Section title="Records" count={String(state.records.length)}>
+                    {state.records.length === 0 ? (
+                        <Placeholder icon={ICON} title="Records" description="Time records show up here" />
                     ) : (
-                        [...watch.records].reverse().map((record) => (
+                        [...state.records].reverse().map((record) => (
                             <ExpanderRow
                                 key={record.id}
                                 title={record.description}
@@ -198,21 +144,13 @@ export function StopwatchApp() {
                                     icon="document-edit-symbolic"
                                     title="Rename"
                                     tooltip="Rename record"
-                                    onActivate={() =>
-                                        setWatch((w) =>
-                                            model.removeRecord(w, record.id),
-                                        )
-                                    }
+                                    onActivate={() => setState((s) => model.removeRecord(s, record.id))}
                                 />
                                 <ActionRow
                                     icon="user-trash-symbolic"
                                     title="Remove"
                                     tooltip="Remove record"
-                                    onActivate={() =>
-                                        setWatch((w) =>
-                                            model.removeRecord(w, record.id),
-                                        )
-                                    }
+                                    onActivate={() => setState((s) => model.removeRecord(s, record.id))}
                                 />
                             </ExpanderRow>
                         ))
