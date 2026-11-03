@@ -2,6 +2,18 @@
 
 Simple time tracker applet for the [Glimpse](https://alex-oleshkevich.github.io/glimpse) desktop panel. It allows tracking time spent on various tasks and keeps record of spent times. It displays live elapsed time on current task in the panel.
 
+## Features
+
+- [x] Integrated stopwatch
+- [x] Manage time records
+    - [x] Save record
+    - [x] Delete record
+    - [ ] Rename record
+    - [ ] Add color codes to records
+    - [ ] Export records
+    - [ ] Clear all records
+    - [ ] Resume record
+
 ## Installation
 
 ### NixOS
