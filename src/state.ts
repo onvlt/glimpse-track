@@ -1,4 +1,4 @@
-export type TimeTrackerStatus = "idle" | "running" | "paused";
+import * as stopwatch from "./stopwatch";
 
 export interface Record {
     id: number;
@@ -6,87 +6,57 @@ export interface Record {
     totalElapsed: number;
 }
 
-export interface TimeTracker {
-    status: TimeTrackerStatus;
-    /**
-     * Elapsed time in milliseconds at the moment the clock last stopped.
-     */
-    totalElapsed: number;
-    /**
-     * Timestamp of the moment the clock last started, or 0 while not running.
-     */
-    startedAt: number;
-    /**
-     * Draft description for the next record; empty string when none was typed.
-     */
+export interface AppState {
+    stopwatch: stopwatch.StopwatchState;
     description: string;
     records: Array<Record>;
 }
 
-export function initial(): TimeTracker {
+export function initial(): AppState {
     return {
-        status: "idle",
-        totalElapsed: 0,
-        startedAt: 0,
+        stopwatch: stopwatch.initial(),
         description: "",
         records: [],
     };
 }
 
-/**
- * Elapsed time in milliseconds; `now` only matters while running.
- */
-export function getElapsed(model: TimeTracker, now: number): number {
-    return model.status === "running" ? model.totalElapsed + (now - model.startedAt) : model.totalElapsed;
+export function getElapsed(state: AppState, now: number): number {
+    return stopwatch.getElapsed(state.stopwatch, now);
 }
 
-export function toggleRunning(model: TimeTracker, now: number): TimeTracker {
-    if (model.status === "running") {
-        return {
-            ...model,
-            status: "paused",
-            totalElapsed: model.totalElapsed + (now - model.startedAt),
-            startedAt: 0,
-        };
-    }
-    return { ...model, status: "running", startedAt: now };
+export function toggleRunning(state: AppState, now: number): AppState {
+    return { ...state, stopwatch: stopwatch.toggle(state.stopwatch, now) };
 }
 
-export function reset(model: TimeTracker): TimeTracker {
-    return {
-        ...initial(),
-        records: model.records,
-    };
+export function reset(state: AppState): AppState {
+    return { ...state, stopwatch: stopwatch.reset() };
 }
 
-/**
- * Description is untrusted input: trimmed and capped at the same length as option names.
- */
-export function setDescription(model: TimeTracker, description: string): TimeTracker {
-    return { ...model, description };
+export function setDescription(state: AppState, description: string): AppState {
+    return { ...state, description };
 }
 
-export function addRecord(model: TimeTracker, now: number): TimeTracker {
-    const id = model.records.length + 1;
-    const description = model.description.trim();
+export function addRecord(state: AppState, now: number): AppState {
+    const id = state.records.length + 1;
+    const description = state.description.trim();
     return {
         ...initial(),
         records: [
-            ...model.records,
+            ...state.records,
             {
                 id,
                 description: description === "" ? `Record ${id}` : description.slice(0, 64),
-                totalElapsed: getElapsed(model, now),
+                totalElapsed: getElapsed(state, now),
             },
         ],
     };
 }
 
-export function renameRecord(model: TimeTracker, id: number, description: string): TimeTracker {
+export function renameRecord(state: AppState, id: number, description: string): AppState {
     const name = description.trim().slice(0, 64);
     return {
-        ...model,
-        records: model.records.map((record) =>
+        ...state,
+        records: state.records.map((record) =>
             record.id === id
                 ? {
                       ...record,
@@ -97,10 +67,10 @@ export function renameRecord(model: TimeTracker, id: number, description: string
     };
 }
 
-export function removeRecord(model: TimeTracker, id: number): TimeTracker {
-    const kept = model.records.filter((record) => record.id !== id);
+export function removeRecord(state: AppState, id: number): AppState {
+    const kept = state.records.filter((record) => record.id !== id);
     return {
-        ...model,
+        ...state,
         records: kept.map((record, index) => ({
             ...record,
             id: index + 1,

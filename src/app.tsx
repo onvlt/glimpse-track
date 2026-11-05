@@ -67,15 +67,16 @@ export function Applet() {
     const vertical = placement?.orientation === "vertical";
     const title = configuredName(options, NAME);
 
-    const [state, setState] = usePersistentState<model.TimeTracker>("timeTracker", model.initial());
+    const [state, setState] = usePersistentState<model.AppState>("timeTracker", model.initial());
 
-    const running = state.status === "running";
+    const running = state.stopwatch.type === "running";
     useTicker(running);
 
     const current = model.getElapsed(state, Date.now());
     const readout = splitTime(current);
-    const paused = state.status === "paused" && state.totalElapsed > 0;
-    const canAddRecord = state.status === "running" || (state.status === "paused" && state.totalElapsed > 0);
+    const paused = state.stopwatch.type === "paused" && state.stopwatch.totalElapsed > 0;
+    const canAddRecord =
+        state.stopwatch.type === "running" || (state.stopwatch.type === "paused" && state.stopwatch.totalElapsed > 0);
 
     return (
         <>
@@ -84,12 +85,12 @@ export function Applet() {
                 tooltip={running ? `${title}: ${formatTime(current, { showFraction: false })}` : title}
                 dot={running ? "#3584e4" : undefined}
             >
-                {vertical || state.status === "idle" ? null : formatTime(current, { showFraction: false })}
+                {vertical || state.stopwatch.type === "idle" ? null : formatTime(current, { showFraction: false })}
             </Indicator>
             <Popover
                 icon={ICON}
                 title={title}
-                subtitle={running ? "Running" : state.status === "paused" ? "Paused" : "Ready"}
+                subtitle={running ? "Running" : state.stopwatch.type === "paused" ? "Paused" : "Ready"}
             >
                 <Section>
                     <Box valign="fill" spacing={6}>
